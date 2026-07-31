@@ -24,7 +24,7 @@ The PLC uses four states:
 - DRAINING
 - COMM_FAULT
 
-In automatic mode, the pump fills the tank until the level reaches 68 percent. The valve then drains the tank until the level falls to 32 percent.
+In automatic mode, the pump fills the tank until the level reaches 70 percent. The valve then drains the tank until the level falls to 30 percent.
 
 In manual mode, the pump and valve can be controlled independently. If both commands are requested simultaneously, both outputs remain disabled.
 
@@ -67,4 +67,3 @@ Connection settings:
 - IP address: 127.0.0.1
 - Port: 502
 
-This repository is an educational software simulation and is not intended for direct use in a real industrial process.
