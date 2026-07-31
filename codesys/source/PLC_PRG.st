@@ -105,7 +105,7 @@ xValveCommand := FALSE;
 
 // Detect conflicting manual commands
 xManualConflict :=
-    xManualPumpRequest AND xManualValveRequest;
+    NOT xAutoMode AND xManualPumpRequest AND xManualValveRequest;
 
 
 // Highest priority: communication safety
