@@ -8,36 +8,12 @@ CODESYS operates as the Modbus TCP client and controls the simulated tank throug
 
 - Modbus TCP communication between CODESYS and Python
 - Structured Text programming
-- State-machine-based automatic control
+- State-machine-based control logic
 - Automatic and manual operating modes
 - Communication-loss detection
-- Latched fault handling and manual reset
+- Latched communication fault with reset handling
 - Safe pump and valve outputs
-- Virtual tank-level simulation
-
-**Control Logic**
-
-The PLC uses four states:
-
-- INIT
-- FILLING
-- DRAINING
-- COMM_FAULT
-
-In automatic mode, the pump fills the tank until the level reaches 70 percent. The valve then drains the tank until the level falls to 30 percent.
-
-In manual mode, the pump and valve can be controlled independently. If both commands are requested simultaneously, both outputs remain disabled.
-
-If the Modbus connection remains unavailable for seven seconds, the PLC enters COMM_FAULT and disables the outputs. The fault can be cleared only after communication is restored and the operator sends a reset request.
-
-**Modbus Data**
-
-- Input Register 0: Tank level
-- Input Register 1: Temperature
-- Holding Register 0: Pump command
-- Holding Register 1: Valve command
-
-Tank level and temperature values are scaled by 10.
+- Virtual tank-level simulation in Python
 
 **Technologies**
 
@@ -47,23 +23,68 @@ Tank level and temperature values are scaled by 10.
 - pyModbusTCP 0.3.0
 - Modbus TCP
 
+**Example HMI Screen**
+
+![Filling state](docs/filling.png)
+
+**Operating States**
+
+The screenshots below show all operating states except `INIT`, which is only used as a short transition state.
+
+**FILLING**
+
+![Filling](docs/filling.png)
+
+**DRAINING**
+
+![Draining](docs/draining.png)
+
+**MANUAL_IDLE**
+
+![Manual Idle](docs/manual_idle.png)
+
+**MANUAL_FILLING**
+
+![Manual Filling](docs/manual_filling.png)
+
+**MANUAL_DRAINING**
+
+![Manual Draining](docs/manual_draining.png)
+
+**MANUAL_CONFLICT**
+
+![Manual Conflict](docs/manual_conflict.png)
+
+**COMM_LOSS**
+
+![Communication Loss](docs/comm_loss.png)
+
+**COMM_FAULT**
+
+![Communication Fault](docs/comm_fault.png)
+
 **Repository Contents**
 
-- CODESYS project archive
-- Readable Structured Text source files
-- Python virtual Modbus server
-- Python dependency file
-- Project screenshots and documentation
+- `codesys/codesys-modbus-tcp-tank-control.projectarchive`: Complete CODESYS project archive
+- `codesys/source/E_TankState.st`: State enumeration
+- `codesys/source/PLC_PRG.st`: Main Structured Text control program
+- `python-server/virtual_slave.py`: Python-based Modbus TCP server and process simulation
+- `docs/`: HMI screenshots for all operating states
+- `requirements.txt`: Required Python package version
 
 **Running the Project**
 
 1. Restore the CODESYS project archive.
 2. Start CODESYS Control Win.
-3. Start the Python server.
-4. Log in to the PLC runtime and run the application.
+3. Start the Python server with `python python-server/virtual_slave.py`.
+4. Log in to the CODESYS runtime and run the PLC application.
+5. Observe the HMI screens and the state transitions.
 
 Connection settings:
 
-- IP address: 127.0.0.1
-- Port: 502
+- IP address: `127.0.0.1`
+- Port: `502`
 
+**Note**
+
+This project is an educational software simulation and is not intended for direct use in a real industrial process.

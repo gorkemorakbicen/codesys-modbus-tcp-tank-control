@@ -2,9 +2,14 @@
 {attribute 'strict'}
 TYPE E_Tankstate :
 (
-    INIT := 0,
-    FILLING := 10,
-    DRAINING := 20,
-	COMM_FAULT := 90
+    INIT,
+    FILLING,
+    DRAINING,
+    MANUAL_IDLE,
+    MANUAL_FILLING,
+    MANUAL_DRAINING,
+    MANUAL_CONFLICT,
+    COMM_LOSS,
+    COMM_FAULT
 );
 END_TYPE

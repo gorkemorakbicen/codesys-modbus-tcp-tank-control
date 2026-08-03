@@ -11,6 +11,7 @@ DECLARATION
 ===============================================================================
 *)
 
+
 PROGRAM PLC_PRG
 VAR
     // Raw values read via Modbus
@@ -30,6 +31,8 @@ VAR
     wValveCommandRaw : WORD;
 	
     eTankState : E_TankState := E_TankState.INIT;
+	
+	eLastAutoState : E_TankState := E_TankState.FILLING;
 
     rLowLevelLimit : REAL := 32.0;
     rHighLevelLimit : REAL := 68.0;
@@ -53,20 +56,25 @@ VAR
 
 END_VAR
 
+
 (*
 ===============================================================================
 IMPLEMENTATION
 ===============================================================================
 *)
 
-// Convert raw Modbus values into engineering units
-rTankLevelPercent := WORD_TO_REAL(wTankLevelRaw) / 10.0;
-rTemperatureC := WORD_TO_REAL(wTemperatureRaw) / 10.0;
-
-
-// Check the Modbus TCP connection status
+// Check the Modbus TCP connection status first
 xModbusConnected :=
     (Modbus_TCP_Client.uiConnectedSlaves > 0);
+
+
+// Update engineering values only while the Modbus connection is active
+IF xModbusConnected THEN
+
+    rTankLevelPercent := WORD_TO_REAL(wTankLevelRaw) / 10.0;
+    rTemperatureC := WORD_TO_REAL(wTemperatureRaw) / 10.0;
+
+END_IF;
 
 
 // Detect a communication failure if the connection remains unavailable for 7 seconds
@@ -82,7 +90,7 @@ fbFaultResetEdge(
 );
 
 
-// Latch the communication fault
+// Latch the communication fault after the delay expires
 IF fbCommLossDelay.Q THEN
     xCommunicationFault := TRUE;
 END_IF;
@@ -103,18 +111,26 @@ xPumpCommand := FALSE;
 xValveCommand := FALSE;
 
 
-// Detect conflicting manual commands
+// Detect conflicting manual commands only in manual mode
 xManualConflict :=
-    NOT xAutoMode AND xManualPumpRequest AND xManualValveRequest;
+    (NOT xAutoMode)
+    AND xManualPumpRequest
+    AND xManualValveRequest;
 
 
-// Highest priority: communication safety
-IF (NOT xModbusConnected) OR xCommunicationFault THEN
+// Highest priority: latched communication fault
+IF xCommunicationFault THEN
 
     eTankState := E_TankState.COMM_FAULT;
 
 
-// Second priority: automatic operation
+// Temporary communication loss before the fault delay expires
+ELSIF NOT xModbusConnected THEN
+
+    eTankState := E_TankState.COMM_LOSS;
+
+
+// Automatic operation
 ELSIF xAutoMode THEN
 
     CASE eTankState OF
@@ -122,15 +138,25 @@ ELSIF xAutoMode THEN
         E_TankState.INIT:
 
             IF rTankLevelPercent >= rHighLevelLimit THEN
+
                 eTankState := E_TankState.DRAINING;
-            ELSE
+
+            ELSIF rTankLevelPercent <= rLowLevelLimit THEN
+
                 eTankState := E_TankState.FILLING;
+
+            ELSE
+
+                // Resume the last automatic direction inside the hysteresis band
+                eTankState := eLastAutoState;
+
             END_IF;
 
 
         E_TankState.FILLING:
 
             xPumpCommand := TRUE;
+            eLastAutoState := E_TankState.FILLING;
 
             IF rTankLevelPercent >= rHighLevelLimit THEN
                 eTankState := E_TankState.DRAINING;
@@ -140,33 +166,56 @@ ELSIF xAutoMode THEN
         E_TankState.DRAINING:
 
             xValveCommand := TRUE;
+            eLastAutoState := E_TankState.DRAINING;
 
             IF rTankLevelPercent <= rLowLevelLimit THEN
                 eTankState := E_TankState.FILLING;
             END_IF;
 
 
+        E_TankState.COMM_LOSS:
+
+            // Return to INIT after a temporary communication loss
+            eTankState := E_TankState.INIT;
+
+
         E_TankState.COMM_FAULT:
 
-            // Perform a controlled restart after communication is restored
+            // Return to INIT after the latched communication fault is reset
             eTankState := E_TankState.INIT;
 
 
         ELSE
 
+            // Return to INIT when automatic mode is entered from a manual
+            // or otherwise unhandled state
             eTankState := E_TankState.INIT;
 
     END_CASE;
 
 
-// Third priority: manual operation
+// Manual operation
 ELSE
 
-    eTankState := E_TankState.INIT;
+    IF xManualConflict THEN
 
-    IF NOT xManualConflict THEN
-        xPumpCommand := xManualPumpRequest;
-        xValveCommand := xManualValveRequest;
+        // Keep both outputs disabled when conflicting commands are active
+        eTankState := E_TankState.MANUAL_CONFLICT;
+
+    ELSIF xManualPumpRequest THEN
+
+        xPumpCommand := TRUE;
+        eTankState := E_TankState.MANUAL_FILLING;
+
+    ELSIF xManualValveRequest THEN
+
+        xValveCommand := TRUE;
+        eTankState := E_TankState.MANUAL_DRAINING;
+
+    ELSE
+
+        eTankState := E_TankState.MANUAL_IDLE;
+
     END_IF;
 
 END_IF;
