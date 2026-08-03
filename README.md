@@ -84,7 +84,3 @@ Connection settings:
 
 - IP address: `127.0.0.1`
 - Port: `502`
-
-**Note**
-
-This project is an educational software simulation and is not intended for direct use in a real industrial process.
