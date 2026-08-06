@@ -1,4 +1,4 @@
-**CODESYS Modbus TCP Tank Control**
+# CODESYS Modbus TCP Tank Control
 
 This project demonstrates Modbus TCP communication between a CODESYS PLC application and a Python-based virtual tank simulator.
 
@@ -6,7 +6,7 @@ CODESYS operates as the Modbus TCP client. It reads the simulated tank level and
 
 Python operates as the Modbus TCP server. It simulates the tank process according to the commands received from the PLC.
 
-**Main Features**
+## Main Features
 
 - Modbus TCP communication between CODESYS and Python
 - IEC 61131-3 Structured Text programming
@@ -19,7 +19,7 @@ Python operates as the Modbus TCP server. It simulates the tank process accordin
 - Persistent tank level in the Python simulation
 - CODESYS Visualization for operation and fault monitoring
 
-**System Behavior**
+## System Behavior
 
 In automatic mode, the PLC controls the tank between two level limits:
 
@@ -36,7 +36,7 @@ In manual mode, the operator can request the pump or valve directly.
 
 If both manual commands are requested simultaneously, the system enters `MANUAL_CONFLICT`. Both outputs remain disabled in this condition.
 
-**Communication Fault Behavior**
+## Communication Fault Behavior
 
 The PLC continuously checks the Modbus TCP connection.
 
@@ -55,9 +55,9 @@ If communication remains unavailable for seven seconds:
 - Restoring the connection alone does not clear the fault.
 - The operator must press the fault-reset button after communication is restored.
 
-This prevents the process from restarting automatically after a persistent communication failure.
+Even after communication is restored, the pump and valve remain disabled until the operator resets the latched fault.
 
-**Recovery Behavior**
+## Recovery Behavior
 
 The PLC stores the last active automatic direction in `eLastAutoState`.
 
@@ -69,7 +69,7 @@ After a temporary communication loss or a fault reset:
 
 This avoids always restarting with filling and preserves the hysteresis behavior after a communication interruption.
 
-**Python Process Simulation**
+## Python Process Simulation
 
 The Python server simulates the physical tank behavior:
 
@@ -85,16 +85,16 @@ When the Python server is restarted, it restores the last saved level instead of
 
 The runtime state file is excluded from Git with `.gitignore`.
 
-**Modbus Register Map**
+## Modbus Register Map
 
 - Input Register 0: Tank level, scaled by 10
 - Input Register 1: Temperature, scaled by 10
 - Holding Register 0: Pump command
 - Holding Register 1: Valve command
 
-For example, a tank-level register value of 620 represents 62.0 percent.
+For example, a tank-level register value of `620` represents `62.0 percent`.
 
-**Technologies**
+## Technologies
 
 - CODESYS Development System
 - CODESYS Control Win V3 x64
@@ -103,59 +103,59 @@ For example, a tank-level register value of 620 represents 62.0 percent.
 - pyModbusTCP 0.3.0
 - Modbus TCP
 
-**Operating States**
+## Operating States
 
 `INIT` is a short transition state and is therefore not included in the screenshots.
 
-**FILLING**
+### FILLING
 
 The pump fills the tank until the upper level limit is reached.
 
-![Filling](docs/filling.png)
+![Filling state](docs/filling.png)
 
-**DRAINING**
+### DRAINING
 
 The valve drains the tank until the lower level limit is reached.
 
-![Draining](docs/draining.png)
+![Draining state](docs/draining.png)
 
-**MANUAL_IDLE**
+### MANUAL_IDLE
 
 Manual mode is active, but no manual command is requested.
 
-![Manual Idle](docs/manual_idle.png)
+![Manual idle state](docs/manual_idle.png)
 
-**MANUAL_FILLING**
+### MANUAL_FILLING
 
 The pump is controlled manually.
 
-![Manual Filling](docs/manual_filling.png)
+![Manual filling state](docs/manual_filling.png)
 
-**MANUAL_DRAINING**
+### MANUAL_DRAINING
 
 The valve is controlled manually.
 
-![Manual Draining](docs/manual_draining.png)
+![Manual draining state](docs/manual_draining.png)
 
-**MANUAL_CONFLICT**
+### MANUAL_CONFLICT
 
 Both manual commands are active, so both outputs remain disabled.
 
-![Manual Conflict](docs/manual_conflict.png)
+![Manual conflict state](docs/manual_conflict.png)
 
-**COMM_LOSS**
+### COMM_LOSS
 
 Communication has been interrupted, but the seven-second fault delay has not yet expired.
 
-![Communication Loss](docs/comm_loss.png)
+![Communication loss state](docs/comm_loss.png)
 
-**COMM_FAULT**
+### COMM_FAULT
 
 The communication loss has exceeded seven seconds and the fault has been latched.
 
-![Communication Fault](docs/comm_fault.png)
+![Communication fault state](docs/comm_fault.png)
 
-**Repository Contents**
+## Repository Contents
 
 - `codesys/codesys-modbus-tcp-tank-control.projectarchive`: Complete CODESYS project
 - `codesys/source/E_TankState.st`: State enumeration
@@ -164,7 +164,7 @@ The communication loss has exceeded seven seconds and the fault has been latched
 - `requirements.txt`: Required Python dependency
 - `docs/`: HMI screenshots for the operating states
 
-**Running the Project**
+## Running the Project
 
 1. Restore the CODESYS project archive.
 2. Start CODESYS Control Win.
